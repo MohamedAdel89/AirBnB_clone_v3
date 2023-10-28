@@ -1,35 +1,29 @@
 #!/usr/bin/python3
-"""Flask server (variable app)
 """
-
-
+Module for api
+"""
 from flask import Flask, jsonify
-from models import storage
-from os import getenv
+import models
 from api.v1.views import app_views
+from os import getenv
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.register_blueprint(app_views)
-app.url_map.strict_slashes = False
-
-
-@app.teardown_appcontext
-def downtear(self):
-    '''Status of your API'''
-    storage.close()
+cors = CORS(app, resources={r"/*": {"origins": "0.0.0.0"}})
 
 
 @app.errorhandler(404)
-def page_not_found(error):
-    '''return render_template'''
-    return jsonify('error='Not found'), 404
+def error_404(e):
+    """Returns the status 404"""
+    return jsonify({"error": "Not found"}), 404
 
+
+@app.teardown_appcontext
+def teardown_db(exception):
+    """closes the storage on teardown"""
+    models.storage.close()
 
 if __name__ == "__main__":
-    host = getenv('HBNB_API_HOST')
-    port = getenv('HBNB_API_PORT')
-    if not host:
-        host = '0.0.0.0'
-    if not port:
-        port = '5000'
-    app.run(host=host, port=port, threaded=True)
+    app.run(host=getenv("HBNB_API_HOST"),
+            port=int(getenv("HBNB_API_PORT")), threaded=True)
